@@ -1,0 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Aladin&family=Press+Start+2P&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-pixel: "Press Start 2P", ui-sans-serif, system-ui, sans-serif;
+  --font-aladin: "Aladin", ui-sans-serif, system-ui, sans-serif;
+}
+
+@keyframes sprite2 {
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes sprite3 {
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes sprite10 {
+  100% {
+    transform: translateX(-100%);
+  }
+}

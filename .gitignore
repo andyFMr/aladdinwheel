@@ -1,0 +1,10 @@
+node_modules/
+assets/
+build/
+dist/
+coverage/
+wheel.zip
+.DS_Store
+*.log
+.env*
+!.env.example
