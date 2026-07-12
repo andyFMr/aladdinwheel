@@ -184,7 +184,7 @@ const INITIAL_CONFIG: AppConfig = {
     position: 'left',
     type: 'image',
     bgColor: '#f3e9bbff',
-    btnImg: { id: 'btnImg', source: '/pergaminho.png', scale: 97, offsetX: 0, offsetY: 0, pixelated: true },
+    btnImg: { id: 'btnImg', source: './pergaminho.png', scale: 97, offsetX: 0, offsetY: 0, pixelated: true },
     outlineColor: '#000000',
     hasOutline: false,
     textAlign: 'center',
@@ -197,7 +197,7 @@ const INITIAL_CONFIG: AppConfig = {
     color1: '#000000',
     color2: '#222222',
     bgImage: '',
-    bgAsset: { id: 'bgAsset', source: '/bg.png', scale: 100, offsetX: 0, offsetY: 0, pixelated: false },
+    bgAsset: { id: 'bgAsset', source: './bg.png', scale: 100, offsetX: 0, offsetY: 0, pixelated: false },
   },
   wheel: {
     colorMode: 'pattern',
@@ -212,14 +212,14 @@ const INITIAL_CONFIG: AppConfig = {
     colorTop: '#593112',
     type: 'solid',
     bgColor: '#dca475',
-    bannerImg: { id: 'bannerImg', source: '/pergaminho.png', scale: 97, offsetX: 0, offsetY: 0, pixelated: true },
+    bannerImg: { id: 'bannerImg', source: './pergaminho.png', scale: 97, offsetX: 0, offsetY: 0, pixelated: true },
     font: 'font-pixel',
     fontSize: 12,
   },
   genie: {
-    idle: { id: 'genieIdle', source: '/genie1.gif', scale: 94, offsetX: 8, offsetY: 15, pixelated: true },
-    spin: { id: 'genieSpin', source: '/genie2.gif', scale: 94, offsetX: 8, offsetY: 15, pixelated: true },
-    result: { id: 'genieResult', source: '/genie3.gif', scale: 94, offsetX: 0, offsetY: 15, pixelated: true },
+    idle: { id: 'genieIdle', source: './genie1.gif', scale: 94, offsetX: 8, offsetY: 15, pixelated: true },
+    spin: { id: 'genieSpin', source: './genie2.gif', scale: 94, offsetX: 8, offsetY: 15, pixelated: true },
+    result: { id: 'genieResult', source: './genie3.gif', scale: 94, offsetX: 0, offsetY: 15, pixelated: true },
   },
   customFonts: []
 };
