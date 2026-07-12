@@ -1,9 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=Aladin&family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Aladin&family=Almendra+Display&family=Press+Start+2P&family=Yatra+One&display=swap');
 @import "tailwindcss";
+
+@font-face {
+  font-family: 'AladdinCustom';
+  src: url('/Aladdin.ttf') format('truetype'),
+       url('/aladdin.ttf') format('truetype'),
+       url('/Aladdin.otf') format('opentype'),
+       url('/aladdin.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
 
 @theme {
   --font-pixel: "Press Start 2P", ui-sans-serif, system-ui, sans-serif;
-  --font-aladin: "Aladin", ui-sans-serif, system-ui, sans-serif;
+  --font-aladin: "AladdinCustom", "Aladin", ui-sans-serif, system-ui, sans-serif;
+  --font-almendra: "Almendra Display", serif;
+  --font-yatra: "Yatra One", cursive;
 }
 
 @keyframes sprite2 {
@@ -13,6 +25,12 @@
 }
 
 @keyframes sprite3 {
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes sprite4 {
   100% {
     transform: translateX(-100%);
   }
