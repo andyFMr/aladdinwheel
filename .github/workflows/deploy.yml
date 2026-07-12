@@ -1,0 +1,55 @@
+# Fluxo simples para fazer deploy de um site Vite para o GitHub Pages
+name: Deploy to GitHub Pages
+
+on:
+  # Roda a action sempre que você fizer um push (enviar código) para a branch main
+  push:
+    branches: ["main"]
+
+  # Permite rodar essa action manualmente a partir da aba Actions
+  workflow_dispatch:
+
+# Permissões necessárias para publicar no GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Previne que múltiplos deploys rodem ao mesmo tempo
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  # Job responsável por fazer a build (compilação)
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - name: Instalar dependências
+        run: npm ci
+      - name: Construir projeto (Vite build)
+        run: npm run build
+      - name: Fazer upload dos artefatos
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+  # Job responsável por pegar a build pronta e publicar no Pages
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    needs: build
+    runs-on: ubuntu-latest
+    name: Publicar
+    steps:
+      - name: Publicar no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
