@@ -166,60 +166,60 @@ export type AppConfig = {
 
 const INITIAL_CONFIG: AppConfig = {
   title: {
-    text: 'ROLETA!',
+    text: 'TITULO!',
     color: '#ff6eb4',
-    outlineColor: '#ffffff',
+    outlineColor: '#f3c1f3ff',
     hasOutline: true,
-    font: 'font-aladin',
+    font: 'font-pixel',
     fontSize: 48,
     type: 'text',
-    bgColor: '#ff6eb4',
-    titleImg: { id: 'titleImg', source: '', scale: 100, offsetX: 0, offsetY: 0, pixelated: false },
+    bgColor: '#aa6effff',
+    titleImg: { id: 'titleImg', source: '', scale: 100, offsetX: 0, offsetY: 0, pixelated: true },
   },
   button: {
-    textTop: 'PRESS',
-    textBottom: 'BUTTON',
+    textTop: 'GIRAR',
+    textBottom: 'ROLETA',
     colorTop: '#fca048',
     colorBottom: '#e26b3c',
     position: 'left',
-    type: 'text',
-    bgColor: '#ffffff',
-    btnImg: { id: 'btnImg', source: '', scale: 100, offsetX: 0, offsetY: 0, pixelated: false },
+    type: 'image',
+    bgColor: '#f3e9bbff',
+    btnImg: { id: 'btnImg', source: '/pergaminho.png', scale: 97, offsetX: 0, offsetY: 0, pixelated: true },
     outlineColor: '#000000',
     hasOutline: false,
-    textAlign: 'left',
+    textAlign: 'center',
     font: 'font-pixel',
-    fontSize: 16,
+    fontSize: 32,
   },
   background: {
-    type: 'solid',
-    useImage: false,
+    type: 'gradient',
+    useImage: true,
     color1: '#000000',
     color2: '#222222',
-    bgImage: '/bg.png',
+    bgImage: '',
     bgAsset: { id: 'bgAsset', source: '/bg.png', scale: 100, offsetX: 0, offsetY: 0, pixelated: false },
   },
   wheel: {
-    colorMode: 'custom',
+    colorMode: 'pattern',
     patternColors: ['#ff4db8', '#72b036'],
     font: 'font-pixel',
     fontSize: 18,
     textOrientation: 'horizontal',
-    spinDuration: 3,
+    spinDuration: 6,
   },
   winner: {
-    textTop: 'The Winner is',
+    textTop: 'Vencedor!',
     colorTop: '#593112',
     type: 'solid',
     bgColor: '#dca475',
-    bannerImg: { id: 'bannerImg', source: '/pergaminho.png', scale: 100, offsetX: 0, offsetY: 0, pixelated: false },
+    bannerImg: { id: 'bannerImg', source: '/pergaminho.png', scale: 97, offsetX: 0, offsetY: 0, pixelated: true },
     font: 'font-pixel',
-    fontSize: 36,
+    fontSize: 12,
   },
   genie: {
-    idle: { id: 'genieIdle', source: '/genie1.gif', scale: 85, offsetX: 0, offsetY: 0, pixelated: false },
-    spin: { id: 'genieSpin', source: '/genie2.gif', scale: 85, offsetX: 0, offsetY: 0, pixelated: false },
-    result: { id: 'genieResult', source: '/genie3.gif', scale: 110, offsetX: 0, offsetY: 0, pixelated: false },
+    idle: { id: 'genieIdle', source: '/genie1.gif', scale: 94, offsetX: 8, offsetY: 15, pixelated: true },
+    spin: { id: 'genieSpin', source: '/genie2.gif', scale: 94, offsetX: 8, offsetY: 15, pixelated: true },
+    result: { id: 'genieResult', source: '/genie3.gif', scale: 94, offsetX: 0, offsetY: 15, pixelated: true },
   },
   customFonts: []
 };
@@ -227,19 +227,28 @@ const INITIAL_CONFIG: AppConfig = {
 const DEFAULT_COLORS = ['#ff4db8', '#72b036', '#d82423', '#7851d9', '#fca048', '#36b0a9', '#d8d523', '#9623d8', '#23d875', '#d85a23', '#3a82f6', '#ec4899'];
 
 const INITIAL_SEGMENTS: Segment[] = [
-  { id: 1, title: '❤️', description: 'EXTRA LIFE', color: '#ff4db8', textColor: 'white' },
-  { id: 2, title: '1UP', description: 'PLAYER', color: '#72b036', textColor: 'white' },
-  { id: 3, title: '⭐', description: '500 PTS', color: '#d82423', textColor: 'white' },
-  { id: 4, title: '🧞', description: 'WISH', color: '#e9ecef', textColor: 'black' },
-  { id: 5, title: '2UP', description: 'PLAYER 2', color: '#7851d9', textColor: 'white' },
-  { id: 6, title: '⭐', description: '1000 PTS', color: '#d82423', textColor: 'white' },
+  { id: 1, title: 'Usuario 1', description: 'Jogo 1 - Console 1', color: '#ff4db8', textColor: 'white' },
+  { id: 2, title: 'Usuario 2', description: 'Jogo 2 - Console 2', color: '#72b036', textColor: 'white' },
+  { id: 3, title: 'Usuario 3', description: 'Jogo 3 - Console 3', color: '#d82423', textColor: 'white' },
+  { id: 4, title: 'Usuario 4', description: 'Jogo 4 - Console 4', color: '#e9ecef', textColor: 'black' },
+  { id: 5, title: 'Usuario 5', description: 'Jogo 5 - Console 5', color: '#7851d9', textColor: 'white' },
+  { id: 6, title: 'Usuario 6', description: 'Jogo 6 - Console 6', color: '#d82423', textColor: 'white' },
 ];
 
 export default function App() {
   const [segments, setSegments] = useState<Segment[]>(() => {
     try {
       const saved = localStorage.getItem('aladdinwheel_autosave_segments');
-      return saved ? JSON.parse(saved) : INITIAL_SEGMENTS;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const uniqueIds = new Set();
+        return parsed.filter((seg: Segment) => {
+          if (uniqueIds.has(seg.id)) return false;
+          uniqueIds.add(seg.id);
+          return true;
+        });
+      }
+      return INITIAL_SEGMENTS;
     } catch {
       return INITIAL_SEGMENTS;
     }
@@ -264,7 +273,7 @@ export default function App() {
           },
           winner: { ...INITIAL_CONFIG.winner, ...(parsed.winner || {}), bannerImg: parsed.winner?.bannerImg || INITIAL_CONFIG.winner.bannerImg },
           genie: { ...INITIAL_CONFIG.genie, ...(parsed.genie || {}) },
-          customFonts: parsed.customFonts || []
+          customFonts: Array.isArray(parsed.customFonts) ? parsed.customFonts : (parsed.customFonts?.undefined || [])
         };
       }
       return INITIAL_CONFIG;
@@ -495,7 +504,7 @@ export default function App() {
 
   const addSegment = () => {
     if (segments.length >= 12) return;
-    const newId = Math.max(0, ...segments.map(s => s.id)) + 1;
+    const newId = Date.now(); // Ensures globally unique keys
     const lastColor = segments.length > 0 ? segments[segments.length - 1].color : '';
     let nextColor = '#555555';
     const defaultIndex = DEFAULT_COLORS.indexOf(lastColor);
@@ -505,7 +514,7 @@ export default function App() {
       const available = DEFAULT_COLORS.filter(c => c !== lastColor);
       nextColor = available[Math.floor(Math.random() * available.length)];
     }
-    setSegments([...segments, { id: newId, title: 'NEW', description: '', color: nextColor, textColor: 'white', orientation: 'horizontal' }]);
+    setSegments([...segments, { id: newId, title: 'NEW', description: '', color: nextColor, textColor: 'white' }]);
   };
 
   const removeSegment = (index: number) => {
@@ -530,16 +539,25 @@ export default function App() {
   const restoreAllRemovedSegments = () => {
     if (removedSegmentsBackup.length === 0 && chosenItems.length === 0) return;
     const currentIds = new Set(segments.map(s => s.id));
-    const toRestore = [...removedSegmentsBackup, ...chosenItems.map(item => ({
-      id: item.id,
+
+    // Deduplicate from both sources
+    const merged = [...removedSegmentsBackup, ...chosenItems.map(item => ({
+      id: item.originalId || item.id,
       title: item.title,
       description: item.description,
       color: item.color,
-      textColor: item.textColor,
-      orientation: item.orientation
-    }))].filter(seg => !currentIds.has(seg.id));
+      textColor: item.textColor
+    }))];
 
-    setSegments(prev => [...prev, ...toRestore]);
+    const uniqueToRestore = [];
+    for (const seg of merged) {
+      if (!currentIds.has(seg.id)) {
+        uniqueToRestore.push(seg);
+        currentIds.add(seg.id); // Add to set so we don't restore it twice
+      }
+    }
+
+    setSegments(prev => [...prev, ...uniqueToRestore]);
     setRemovedSegmentsBackup([]);
   };
 
@@ -735,14 +753,10 @@ export default function App() {
 
         {/* Scroll Left Roll */}
         <div className="absolute top-[-6px] bottom-[-6px] left-[-20px] w-[24px] border-[4px] border-[#593112] rounded-l-xl -z-10 shadow-[-6px_8px_0_rgba(0,0,0,0.25)] overflow-hidden" style={{ backgroundColor: config.winner.bgColor, filter: 'brightness(0.85)' }}>
-          <div className="absolute top-[10px] left-[4px] w-[12px] h-[16px] border-r-[4px] border-y-[4px] border-[#593112] rounded-r-full"></div>
-          <div className="absolute bottom-[10px] left-[4px] w-[12px] h-[16px] border-r-[4px] border-y-[4px] border-[#593112] rounded-r-full"></div>
         </div>
 
         {/* Scroll Right Roll */}
         <div className="absolute top-[-6px] bottom-[-6px] right-[-20px] w-[24px] border-[4px] border-[#593112] rounded-r-xl -z-10 shadow-[6px_8px_0_rgba(0,0,0,0.25)] overflow-hidden" style={{ backgroundColor: config.winner.bgColor, filter: 'brightness(0.85)' }}>
-          <div className="absolute top-[10px] right-[4px] w-[12px] h-[16px] border-l-[4px] border-y-[4px] border-[#593112] rounded-l-full"></div>
-          <div className="absolute bottom-[10px] right-[4px] w-[12px] h-[16px] border-l-[4px] border-y-[4px] border-[#593112] rounded-l-full"></div>
         </div>
 
         {/* Text Content */}
@@ -918,26 +932,29 @@ export default function App() {
                     }}
                   >
                     <div
-                      className={`absolute inset-0 flex ${config.wheel.textOrientation === 'vertical' ? 'flex-row' : 'flex-col'} items-center justify-end pb-6 sm:pb-8 md:pb-12`}
+                      className="absolute inset-0 flex flex-col"
                       style={{ transform: 'rotate(180deg)', transformOrigin: 'center' }}
                     >
-                      <div style={{ writingMode: config.wheel.textOrientation === 'vertical' ? 'vertical-rl' : 'horizontal-tb', textOrientation: 'upright', fontSize: config.wheel.fontSize }}>
-                        <SmartText text={seg.title} fontId={config.wheel.font} className="text-center font-bold" />
-                      </div>
-                      {seg.description && (
-                        <div
-                          className="text-center px-1 opacity-90 leading-tight"
-                          style={{
-                            fontSize: Math.max(8, config.wheel.fontSize * 0.6),
-                            marginTop: config.wheel.textOrientation === 'vertical' ? 0 : '0.5rem',
-                            marginLeft: config.wheel.textOrientation === 'vertical' ? '0.5rem' : 0,
-                            writingMode: config.wheel.textOrientation === 'vertical' ? 'vertical-rl' : 'horizontal-tb',
-                            textOrientation: 'upright',
-                          }}
-                        >
-                          <SmartText text={seg.description} fontId={config.wheel.font} className="font-bold" />
+                      <div className="h-[50%] shrink-0"></div>
+                      <div className={`h-[50%] flex ${config.wheel.textOrientation === 'vertical' ? 'flex-row' : 'flex-col'} items-center justify-center px-1 pb-2 sm:pb-4 md:pb-6`}>
+                        <div style={{ writingMode: config.wheel.textOrientation === 'vertical' ? 'vertical-rl' : 'horizontal-tb', textOrientation: 'upright', fontSize: config.wheel.fontSize }}>
+                          <SmartText text={seg.title} fontId={config.wheel.font} className="text-center font-bold" />
                         </div>
-                      )}
+                        {seg.description && (
+                          <div
+                            className="text-center px-1 opacity-90 leading-tight"
+                            style={{
+                              fontSize: Math.max(8, config.wheel.fontSize * 0.6),
+                              marginTop: config.wheel.textOrientation === 'vertical' ? 0 : '0.25rem',
+                              marginLeft: config.wheel.textOrientation === 'vertical' ? '0.25rem' : 0,
+                              writingMode: config.wheel.textOrientation === 'vertical' ? 'vertical-rl' : 'horizontal-tb',
+                              textOrientation: 'upright',
+                            }}
+                          >
+                            <SmartText text={seg.description} fontId={config.wheel.font} className="font-bold" />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -1526,8 +1543,8 @@ export default function App() {
                   </div>
 
                   <FontManager
-                    fonts={config.customFonts}
-                    onChange={(fonts) => updateConfig('customFonts', undefined, fonts)}
+                    fonts={config.customFonts || []}
+                    onChange={(fonts) => setConfig(prev => ({ ...prev, customFonts: fonts }))}
                     onUpload={(id, b64) => setAssetUrls(p => ({ ...p, [id]: b64 }))}
                   />
 
