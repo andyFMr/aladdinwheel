@@ -230,7 +230,7 @@ const INITIAL_SEGMENTS: Segment[] = [
   { id: 1, title: 'Usuario 1', description: 'Jogo 1 - Console 1', color: '#ff4db8', textColor: 'white' },
   { id: 2, title: 'Usuario 2', description: 'Jogo 2 - Console 2', color: '#72b036', textColor: 'white' },
   { id: 3, title: 'Usuario 3', description: 'Jogo 3 - Console 3', color: '#d82423', textColor: 'white' },
-  { id: 4, title: 'Usuario 4', description: 'Jogo 4 - Console 4', color: '#e9ecef', textColor: 'black' },
+  { id: 4, title: 'Usuario 4', description: 'Jogo 4 - Console 4', color: '#e9ecef', textColor: 'white' },
   { id: 5, title: 'Usuario 5', description: 'Jogo 5 - Console 5', color: '#7851d9', textColor: 'white' },
   { id: 6, title: 'Usuario 6', description: 'Jogo 6 - Console 6', color: '#d82423', textColor: 'white' },
 ];
