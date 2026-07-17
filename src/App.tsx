@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Settings, X, Plus, Trash2, Palette, PieChart, Trophy, RotateCcw, CheckCircle2, ListOrdered, Save, Download, Upload, FolderOpen, Share2, Play, Info, Image as ImageIcon, Type } from 'lucide-react';
+import { Settings, X, Plus, Trash2, Palette, PieChart, Trophy, RotateCcw, CheckCircle2, ListOrdered, Save, Download, Upload, FolderOpen, Share2, Play, Info, Image as ImageIcon, Type, Shuffle } from 'lucide-react';
 import { BitmapText } from './BitmapText';
 import { FontManager } from './FontManager';
 
@@ -161,6 +161,17 @@ export type AppConfig = {
     spin: CustomImageAsset;
     result: CustomImageAsset;
   };
+  audio: {
+    bgmEnabled: boolean;
+    bgmVolume: number;
+    bgmAsset: { id: string, source: string, name: string } | null;
+    tickEnabled: boolean;
+    tickVolume: number;
+    tickAsset: { id: string, source: string, name: string } | null;
+    winnerEnabled: boolean;
+    winnerVolume: number;
+    winnerAsset: { id: string, source: string, name: string } | null;
+  };
   customFonts: CustomFontAsset[];
 };
 
@@ -221,6 +232,17 @@ const INITIAL_CONFIG: AppConfig = {
     spin: { id: 'genieSpin', source: './genie2.gif', scale: 94, offsetX: 8, offsetY: 15, pixelated: true },
     result: { id: 'genieResult', source: './genie3.gif', scale: 94, offsetX: 0, offsetY: 15, pixelated: true },
   },
+  audio: {
+    bgmEnabled: true,
+    bgmVolume: 50,
+    bgmAsset: { id: 'bgmDefault', source: './break_time.mp3', name: 'break_time.mp3' },
+    tickEnabled: true,
+    tickVolume: 80,
+    tickAsset: { id: 'tickDefault', source: './cursor.wav', name: 'cursor.wav' },
+    winnerEnabled: true,
+    winnerVolume: 100,
+    winnerAsset: { id: 'winnerDefault', source: './winner.mp3', name: 'winner.mp3' },
+  },
   customFonts: []
 };
 
@@ -273,6 +295,7 @@ export default function App() {
           },
           winner: { ...INITIAL_CONFIG.winner, ...(parsed.winner || {}), bannerImg: parsed.winner?.bannerImg || INITIAL_CONFIG.winner.bannerImg },
           genie: { ...INITIAL_CONFIG.genie, ...(parsed.genie || {}) },
+          audio: { ...INITIAL_CONFIG.audio, ...(parsed.audio || {}) },
           customFonts: Array.isArray(parsed.customFonts) ? parsed.customFonts : (parsed.customFonts?.undefined || [])
         };
       }
@@ -281,7 +304,7 @@ export default function App() {
       return INITIAL_CONFIG;
     }
   });
-  const [settingsTab, setSettingsTab] = useState<'wheel' | 'appearance' | 'saveload'>('wheel');
+  const [settingsTab, setSettingsTab] = useState<'wheel' | 'appearance' | 'audio' | 'saveload'>('wheel');
   const [savedPresets, setSavedPresets] = useState<SavedPreset[]>(() => {
     try {
       const saved = localStorage.getItem('aladdinwheel_saved_presets');
@@ -306,6 +329,9 @@ export default function App() {
   const genie2Ref = useRef<HTMLImageElement>(null);
   const lastPassedDividerRef = useRef<number>(-1);
   const spinRef = useRef<number>();
+  const bgmRef = useRef<HTMLAudioElement>(null);
+  const tickRef = useRef<HTMLAudioElement>(null);
+  const winnerRef = useRef<HTMLAudioElement>(null);
   const [genie3Key, setGenie3Key] = useState(Date.now());
 
   const [assetUrls, setAssetUrls] = useState<Record<string, string>>({});
@@ -314,7 +340,7 @@ export default function App() {
     async function loadAssets() {
       try {
         const { getAssetFromDB } = await import('./assets');
-        const ids = ['genieIdle', 'genieSpin', 'genieResult', 'btnImg', 'bannerImg'];
+        const ids = ['genieIdle', 'genieSpin', 'genieResult', 'btnImg', 'bannerImg', 'bgmDefault', 'tickDefault', 'winnerDefault'];
         const loaded: Record<string, string> = {};
         for (const id of ids) {
           const b64 = await getAssetFromDB(id);
@@ -382,6 +408,42 @@ export default function App() {
       if (spinRef.current) cancelAnimationFrame(spinRef.current);
     }
   }, []);
+
+  // Update BGM volume dynamically
+  useEffect(() => {
+    if (bgmRef.current) {
+      bgmRef.current.volume = config.audio.bgmVolume / 100;
+    }
+  }, [config.audio.bgmVolume]);
+
+  // Handle BGM play/pause based on toggle
+  useEffect(() => {
+    if (!bgmRef.current) return;
+    if (config.audio.bgmEnabled) {
+      // Play might fail if there's no user interaction yet, but we'll also have a global click listener to start it
+      bgmRef.current.play().catch(() => {});
+    } else {
+      bgmRef.current.pause();
+    }
+  }, [config.audio.bgmEnabled]);
+
+  // Global click listener to start BGM once
+  useEffect(() => {
+    const handleInteraction = () => {
+      if (config.audio.bgmEnabled && bgmRef.current && bgmRef.current.paused) {
+        bgmRef.current.play().catch(() => {});
+      }
+      // Remove listeners after first interaction
+      window.removeEventListener('click', handleInteraction);
+      window.removeEventListener('touchstart', handleInteraction);
+    };
+    window.addEventListener('click', handleInteraction);
+    window.addEventListener('touchstart', handleInteraction);
+    return () => {
+      window.removeEventListener('click', handleInteraction);
+      window.removeEventListener('touchstart', handleInteraction);
+    };
+  }, [config.audio.bgmEnabled]);
 
   useEffect(() => {
     try {
@@ -503,7 +565,6 @@ export default function App() {
   };
 
   const addSegment = () => {
-    if (segments.length >= 12) return;
     const newId = Date.now(); // Ensures globally unique keys
     const lastColor = segments.length > 0 ? segments[segments.length - 1].color : '';
     let nextColor = '#555555';
@@ -522,6 +583,26 @@ export default function App() {
     const newSegments = [...segments];
     newSegments.splice(index, 1);
     setSegments(newSegments);
+  };
+
+  const shuffleSegments = () => {
+    const newSegments = [...segments];
+    for (let i = newSegments.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [newSegments[i], newSegments[j]] = [newSegments[j], newSegments[i]];
+    }
+    setSegments(newSegments);
+  };
+
+  const getContrastColor = (hexColor: string) => {
+    if (!hexColor || !/^#([0-9A-F]{3}){1,2}$/i.test(hexColor)) return 'white';
+    let hex = hexColor.replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(char => char + char).join('');
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    return (yiq >= 200) ? 'black' : 'white';
   };
 
   const getSegmentColor = (index: number) => {
@@ -597,6 +678,14 @@ export default function App() {
       const currentSegment = Math.floor(currentRot / segmentAngle);
       if (currentSegment !== lastPassedDividerRef.current) {
         lastPassedDividerRef.current = currentSegment;
+        
+        // Play tick sound
+        if (config.audio.tickEnabled && tickRef.current) {
+          tickRef.current.currentTime = 0;
+          tickRef.current.volume = config.audio.tickVolume / 100;
+          tickRef.current.play().catch(() => {});
+        }
+
         if (genie2Ref.current) {
           const baseSrc = getImgSrc(config.genie.spin);
           if (!baseSrc.startsWith('data:')) {
@@ -615,6 +704,13 @@ export default function App() {
 
         const wonSeg = { ...segments[resultIndex], color: getSegmentColor(resultIndex) };
         setResult(wonSeg);
+
+        // Play winner sound
+        if (config.audio.winnerEnabled && winnerRef.current) {
+          winnerRef.current.currentTime = 0;
+          winnerRef.current.volume = config.audio.winnerVolume / 100;
+          winnerRef.current.play().catch(() => {});
+        }
 
         const newItem: ChosenItem = {
           ...wonSeg,
@@ -840,6 +936,14 @@ export default function App() {
         {/* Top Action Buttons (History & Settings) */}
         <div className="fixed top-4 right-4 sm:top-6 sm:right-6 z-[60] flex items-center gap-3">
           <button
+            onClick={shuffleSegments}
+            className="bg-white text-black p-3 rounded-full hover:bg-gray-200 hover:scale-105 transition-all shadow-lg flex items-center justify-center border border-gray-200 cursor-pointer"
+            title="Embaralhar Itens"
+          >
+            <Shuffle size={24} className="text-amber-600" />
+          </button>
+
+          <button
             onClick={() => setShowHistory(true)}
             className="bg-white text-black p-3 rounded-full hover:bg-gray-200 hover:scale-105 transition-all shadow-lg flex items-center justify-center border border-gray-200 relative cursor-pointer"
             title="Ver Itens Sorteados"
@@ -919,16 +1023,19 @@ export default function App() {
                 ))}
 
                 {/* Content for each segment */}
-                {segments.map((seg, i) => (
+                {segments.map((seg, i) => {
+                  const segColor = getSegmentColor(i);
+                  const isLight = getContrastColor(segColor) === 'black';
+                  return (
                   <div
                     key={`seg-${i}`}
-                    className={`absolute top-0 left-1/2 origin-bottom text-sm sm:text-lg md:text-xl drop-shadow-[2px_2px_0_rgba(0,0,0,1)] ${config.wheel.font}`}
+                    className={`absolute top-0 left-1/2 origin-bottom text-sm sm:text-lg md:text-xl ${isLight ? 'drop-shadow-[1px_1px_0_rgba(255,255,255,0.7)]' : 'drop-shadow-[2px_2px_0_rgba(0,0,0,1)]'} ${config.wheel.font}`}
                     style={{
                       width: '120px',
                       height: '50%',
                       marginLeft: '-60px',
                       transform: `rotate(${i * (360 / segments.length) + (360 / segments.length) / 2}deg)`,
-                      color: seg.textColor,
+                      color: isLight ? 'black' : 'white',
                     }}
                   >
                     <div
@@ -937,7 +1044,7 @@ export default function App() {
                     >
                       <div className="h-[50%] shrink-0"></div>
                       <div className={`h-[50%] flex ${config.wheel.textOrientation === 'vertical' ? 'flex-row' : 'flex-col'} items-center justify-center px-1 pb-2 sm:pb-4 md:pb-6`}>
-                        <div style={{ writingMode: config.wheel.textOrientation === 'vertical' ? 'vertical-rl' : 'horizontal-tb', textOrientation: 'upright', fontSize: config.wheel.fontSize }}>
+                        <div style={{ writingMode: config.wheel.textOrientation === 'vertical' ? 'vertical-rl' : 'horizontal-tb', textOrientation: 'mixed', fontSize: config.wheel.fontSize }}>
                           <SmartText text={seg.title} fontId={config.wheel.font} className="text-center font-bold" />
                         </div>
                         {seg.description && (
@@ -948,7 +1055,7 @@ export default function App() {
                               marginTop: config.wheel.textOrientation === 'vertical' ? 0 : '0.25rem',
                               marginLeft: config.wheel.textOrientation === 'vertical' ? '0.25rem' : 0,
                               writingMode: config.wheel.textOrientation === 'vertical' ? 'vertical-rl' : 'horizontal-tb',
-                              textOrientation: 'upright',
+                              textOrientation: 'mixed',
                             }}
                           >
                             <SmartText text={seg.description} fontId={config.wheel.font} className="font-bold" />
@@ -957,7 +1064,8 @@ export default function App() {
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Inner Hole Cover */}
@@ -1021,6 +1129,13 @@ export default function App() {
                 >
                   <Palette size={18} />
                   <span>Appearance</span>
+                </button>
+                <button
+                  onClick={() => setSettingsTab('audio')}
+                  className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${settingsTab === 'audio' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  <Play size={14} />
+                  <span className="text-[11px] sm:text-xs">Audio</span>
                 </button>
                 <button
                   onClick={() => setSettingsTab('saveload')}
@@ -1188,15 +1303,22 @@ export default function App() {
                     </div>
                   ))}
 
-                  {segments.length < 12 && (
+                  <div className="flex flex-col sm:flex-row gap-3 mt-4">
                     <button
                       onClick={addSegment}
-                      className="w-full py-5 border-2 border-dashed border-gray-300 text-gray-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 rounded-2xl transition-all flex justify-center items-center gap-2 font-semibold shadow-sm mt-2"
+                      className="flex-1 py-4 border-2 border-dashed border-gray-300 text-gray-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 rounded-2xl transition-all flex justify-center items-center gap-2 font-semibold shadow-sm"
                     >
-                      <Plus size={24} />
-                      <span>Add New Segment</span>
+                      <Plus size={20} />
+                      <span>Adicionar Item</span>
                     </button>
-                  )}
+                    <button
+                      onClick={shuffleSegments}
+                      className="flex-1 py-4 border-2 border-dashed border-gray-300 text-gray-500 hover:text-amber-600 hover:border-amber-400 hover:bg-amber-50 rounded-2xl transition-all flex justify-center items-center gap-2 font-semibold shadow-sm"
+                    >
+                      <Shuffle size={20} />
+                      <span>Embaralhar</span>
+                    </button>
+                  </div>
                 </>
               )}
 
@@ -1551,6 +1673,312 @@ export default function App() {
                 </div>
               )}
 
+              {settingsTab === 'audio' && (
+                <div className="flex flex-col gap-6 animate-in fade-in duration-200">
+                  <div className="bg-blue-50/70 border border-blue-200 rounded-2xl p-4 flex items-center gap-3 text-blue-900 text-xs sm:text-sm">
+                    <Info size={20} className="text-blue-600 shrink-0" />
+                    <div>
+                      <span className="font-bold">Música e Sons:</span> A música de fundo iniciará automaticamente após seu primeiro clique na tela (regra dos navegadores). O volume e os efeitos podem ser customizados aqui.
+                    </div>
+                  </div>
+
+                  {/* BGM Settings */}
+                  <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 flex flex-col gap-4">
+                    <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+                      <div>
+                        <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
+                          <Play size={20} className="text-purple-600" />
+                          <span>Música de Fundo</span>
+                        </h3>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" checked={config.audio.bgmEnabled} onChange={(e) => updateConfig('audio', 'bgmEnabled', e.target.checked)} className="sr-only peer" />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <div className="flex justify-between items-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <span>Volume</span>
+                        <span>{config.audio.bgmVolume}%</span>
+                      </div>
+                      <input type="range" min="0" max="100" value={config.audio.bgmVolume} onChange={(e) => updateConfig('audio', 'bgmVolume', Number(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 mt-2">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Arquivo de Áudio Atual</label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-white border border-gray-200 p-2.5 rounded-lg text-sm text-gray-700 truncate">
+                          {config.audio.bgmAsset?.name || 'Padrão (break_time.mp3)'}
+                        </div>
+                        <label className="bg-white text-gray-700 border border-gray-200 p-2.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" title="Carregar outro arquivo MP3/WAV">
+                          <Upload size={18} />
+                          <input type="file" accept="audio/*" className="hidden" onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const { fileToBase64, saveAssetToDB } = await import('./assets');
+                            try {
+                              const b64 = await fileToBase64(file);
+                              await saveAssetToDB('bgmDefault', b64);
+                              setAssetUrls(p => ({ ...p, bgmDefault: b64 }));
+                              updateConfig('audio', 'bgmAsset', { id: 'bgmDefault', source: '', name: file.name });
+                            } catch (err) { console.error(err); }
+                          }} />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tick Settings */}
+                  <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 flex flex-col gap-4">
+                    <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+                      <div>
+                        <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
+                          <CheckCircle2 size={20} className="text-green-600" />
+                          <span>Efeito do Cursor (Tick)</span>
+                        </h3>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" checked={config.audio.tickEnabled} onChange={(e) => updateConfig('audio', 'tickEnabled', e.target.checked)} className="sr-only peer" />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <div className="flex justify-between items-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <span>Volume</span>
+                        <span>{config.audio.tickVolume}%</span>
+                      </div>
+                      <input type="range" min="0" max="100" value={config.audio.tickVolume} onChange={(e) => updateConfig('audio', 'tickVolume', Number(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 mt-2">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Arquivo de Áudio Atual</label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-white border border-gray-200 p-2.5 rounded-lg text-sm text-gray-700 truncate">
+                          {config.audio.tickAsset?.name || 'Padrão (cursor.wav)'}
+                        </div>
+                        <label className="bg-white text-gray-700 border border-gray-200 p-2.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" title="Carregar outro arquivo MP3/WAV">
+                          <Upload size={18} />
+                          <input type="file" accept="audio/*" className="hidden" onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const { fileToBase64, saveAssetToDB } = await import('./assets');
+                            try {
+                              const b64 = await fileToBase64(file);
+                              await saveAssetToDB('tickDefault', b64);
+                              setAssetUrls(p => ({ ...p, tickDefault: b64 }));
+                              updateConfig('audio', 'tickAsset', { id: 'tickDefault', source: '', name: file.name });
+                            } catch (err) { console.error(err); }
+                          }} />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Winner Settings */}
+                  <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 flex flex-col gap-4">
+                    <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+                      <div>
+                        <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
+                          <Trophy size={20} className="text-amber-600" />
+                          <span>Efeito de Vitória</span>
+                        </h3>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" checked={config.audio.winnerEnabled} onChange={(e) => updateConfig('audio', 'winnerEnabled', e.target.checked)} className="sr-only peer" />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <div className="flex justify-between items-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <span>Volume</span>
+                        <span>{config.audio.winnerVolume}%</span>
+                      </div>
+                      <input type="range" min="0" max="100" value={config.audio.winnerVolume} onChange={(e) => updateConfig('audio', 'winnerVolume', Number(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 mt-2">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Arquivo de Áudio Atual</label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-white border border-gray-200 p-2.5 rounded-lg text-sm text-gray-700 truncate">
+                          {config.audio.winnerAsset?.name || 'Padrão (winner.mp3)'}
+                        </div>
+                        <label className="bg-white text-gray-700 border border-gray-200 p-2.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" title="Carregar outro arquivo MP3/WAV">
+                          <Upload size={18} />
+                          <input type="file" accept="audio/*" className="hidden" onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const { fileToBase64, saveAssetToDB } = await import('./assets');
+                            try {
+                              const b64 = await fileToBase64(file);
+                              await saveAssetToDB('winnerDefault', b64);
+                              setAssetUrls(p => ({ ...p, winnerDefault: b64 }));
+                              updateConfig('audio', 'winnerAsset', { id: 'winnerDefault', source: '', name: file.name });
+                            } catch (err) { console.error(err); }
+                          }} />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              )}
+
+              {settingsTab === 'audio' && (
+                <div className="flex flex-col gap-6 animate-in fade-in duration-200">
+                  <div className="bg-blue-50/70 border border-blue-200 rounded-2xl p-4 flex items-center gap-3 text-blue-900 text-xs sm:text-sm">
+                    <Info size={20} className="text-blue-600 shrink-0" />
+                    <div>
+                      <span className="font-bold">Música e Sons:</span> A música de fundo iniciará automaticamente após seu primeiro clique na tela (regra dos navegadores). O volume e os efeitos podem ser customizados aqui.
+                    </div>
+                  </div>
+
+                  {/* BGM Settings */}
+                  <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 flex flex-col gap-4">
+                    <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+                      <div>
+                        <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
+                          <Play size={20} className="text-purple-600" />
+                          <span>Música de Fundo</span>
+                        </h3>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" checked={config.audio.bgmEnabled} onChange={(e) => updateConfig('audio', 'bgmEnabled', e.target.checked)} className="sr-only peer" />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <div className="flex justify-between items-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <span>Volume</span>
+                        <span>{config.audio.bgmVolume}%</span>
+                      </div>
+                      <input type="range" min="0" max="100" value={config.audio.bgmVolume} onChange={(e) => updateConfig('audio', 'bgmVolume', Number(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 mt-2">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Arquivo de Áudio Atual</label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-white border border-gray-200 p-2.5 rounded-lg text-sm text-gray-700 truncate">
+                          {config.audio.bgmAsset?.name || 'Padrão (break_time.mp3)'}
+                        </div>
+                        <label className="bg-white text-gray-700 border border-gray-200 p-2.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" title="Carregar outro arquivo MP3/WAV">
+                          <Upload size={18} />
+                          <input type="file" accept="audio/*" className="hidden" onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const { fileToBase64, saveAssetToDB } = await import('./assets');
+                            try {
+                              const b64 = await fileToBase64(file);
+                              await saveAssetToDB('bgmDefault', b64);
+                              setAssetUrls(p => ({ ...p, bgmDefault: b64 }));
+                              updateConfig('audio', 'bgmAsset', { id: 'bgmDefault', source: '', name: file.name });
+                            } catch (err) { console.error(err); }
+                          }} />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tick Settings */}
+                  <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 flex flex-col gap-4">
+                    <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+                      <div>
+                        <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
+                          <CheckCircle2 size={20} className="text-green-600" />
+                          <span>Efeito do Cursor (Tick)</span>
+                        </h3>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" checked={config.audio.tickEnabled} onChange={(e) => updateConfig('audio', 'tickEnabled', e.target.checked)} className="sr-only peer" />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <div className="flex justify-between items-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <span>Volume</span>
+                        <span>{config.audio.tickVolume}%</span>
+                      </div>
+                      <input type="range" min="0" max="100" value={config.audio.tickVolume} onChange={(e) => updateConfig('audio', 'tickVolume', Number(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 mt-2">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Arquivo de Áudio Atual</label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-white border border-gray-200 p-2.5 rounded-lg text-sm text-gray-700 truncate">
+                          {config.audio.tickAsset?.name || 'Padrão (cursor.wav)'}
+                        </div>
+                        <label className="bg-white text-gray-700 border border-gray-200 p-2.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" title="Carregar outro arquivo MP3/WAV">
+                          <Upload size={18} />
+                          <input type="file" accept="audio/*" className="hidden" onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const { fileToBase64, saveAssetToDB } = await import('./assets');
+                            try {
+                              const b64 = await fileToBase64(file);
+                              await saveAssetToDB('tickDefault', b64);
+                              setAssetUrls(p => ({ ...p, tickDefault: b64 }));
+                              updateConfig('audio', 'tickAsset', { id: 'tickDefault', source: '', name: file.name });
+                            } catch (err) { console.error(err); }
+                          }} />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Winner Settings */}
+                  <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 flex flex-col gap-4">
+                    <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+                      <div>
+                        <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
+                          <Trophy size={20} className="text-amber-600" />
+                          <span>Efeito de Vitória</span>
+                        </h3>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" checked={config.audio.winnerEnabled} onChange={(e) => updateConfig('audio', 'winnerEnabled', e.target.checked)} className="sr-only peer" />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <div className="flex justify-between items-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <span>Volume</span>
+                        <span>{config.audio.winnerVolume}%</span>
+                      </div>
+                      <input type="range" min="0" max="100" value={config.audio.winnerVolume} onChange={(e) => updateConfig('audio', 'winnerVolume', Number(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 mt-2">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Arquivo de Áudio Atual</label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-white border border-gray-200 p-2.5 rounded-lg text-sm text-gray-700 truncate">
+                          {config.audio.winnerAsset?.name || 'Padrão (winner.mp3)'}
+                        </div>
+                        <label className="bg-white text-gray-700 border border-gray-200 p-2.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors" title="Carregar outro arquivo MP3/WAV">
+                          <Upload size={18} />
+                          <input type="file" accept="audio/*" className="hidden" onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const { fileToBase64, saveAssetToDB } = await import('./assets');
+                            try {
+                              const b64 = await fileToBase64(file);
+                              await saveAssetToDB('winnerDefault', b64);
+                              setAssetUrls(p => ({ ...p, winnerDefault: b64 }));
+                              updateConfig('audio', 'winnerAsset', { id: 'winnerDefault', source: '', name: file.name });
+                            } catch (err) { console.error(err); }
+                          }} />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              )}
+
               {settingsTab === 'saveload' && (
                 <div className="flex flex-col gap-6 animate-in fade-in duration-200">
                   {saveLoadMessage && (
@@ -1863,6 +2291,11 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Audio Elements */}
+      <audio ref={bgmRef} loop src={config.audio.bgmAsset ? (assetUrls[config.audio.bgmAsset.id] || config.audio.bgmAsset.source) : ''} />
+      <audio ref={tickRef} src={config.audio.tickAsset ? (assetUrls[config.audio.tickAsset.id] || config.audio.tickAsset.source) : ''} />
+      <audio ref={winnerRef} src={config.audio.winnerAsset ? (assetUrls[config.audio.winnerAsset.id] || config.audio.winnerAsset.source) : ''} />
 
     </div>
   );
