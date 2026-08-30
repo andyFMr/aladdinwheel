@@ -421,7 +421,7 @@ export default function App() {
     if (!bgmRef.current) return;
     if (config.audio.bgmEnabled) {
       // Play might fail if there's no user interaction yet, but we'll also have a global click listener to start it
-      bgmRef.current.play().catch(() => {});
+      bgmRef.current.play().catch(() => { });
     } else {
       bgmRef.current.pause();
     }
@@ -431,7 +431,7 @@ export default function App() {
   useEffect(() => {
     const handleInteraction = () => {
       if (config.audio.bgmEnabled && bgmRef.current && bgmRef.current.paused) {
-        bgmRef.current.play().catch(() => {});
+        bgmRef.current.play().catch(() => { });
       }
       // Remove listeners after first interaction
       window.removeEventListener('click', handleInteraction);
@@ -678,12 +678,12 @@ export default function App() {
       const currentSegment = Math.floor(currentRot / segmentAngle);
       if (currentSegment !== lastPassedDividerRef.current) {
         lastPassedDividerRef.current = currentSegment;
-        
+
         // Play tick sound
         if (config.audio.tickEnabled && tickRef.current) {
           tickRef.current.currentTime = 0;
           tickRef.current.volume = config.audio.tickVolume / 100;
-          tickRef.current.play().catch(() => {});
+          tickRef.current.play().catch(() => { });
         }
 
         if (genie2Ref.current) {
@@ -709,7 +709,7 @@ export default function App() {
         if (config.audio.winnerEnabled && winnerRef.current) {
           winnerRef.current.currentTime = 0;
           winnerRef.current.volume = config.audio.winnerVolume / 100;
-          winnerRef.current.play().catch(() => {});
+          winnerRef.current.play().catch(() => { });
         }
 
         const newItem: ChosenItem = {
@@ -1027,43 +1027,43 @@ export default function App() {
                   const segColor = getSegmentColor(i);
                   const isLight = getContrastColor(segColor) === 'black';
                   return (
-                  <div
-                    key={`seg-${i}`}
-                    className={`absolute top-0 left-1/2 origin-bottom text-sm sm:text-lg md:text-xl ${isLight ? 'drop-shadow-[1px_1px_0_rgba(255,255,255,0.7)]' : 'drop-shadow-[2px_2px_0_rgba(0,0,0,1)]'} ${config.wheel.font}`}
-                    style={{
-                      width: '120px',
-                      height: '50%',
-                      marginLeft: '-60px',
-                      transform: `rotate(${i * (360 / segments.length) + (360 / segments.length) / 2}deg)`,
-                      color: isLight ? 'black' : 'white',
-                    }}
-                  >
                     <div
-                      className="absolute inset-0 flex flex-col"
-                      style={{ transform: 'rotate(180deg)', transformOrigin: 'center' }}
+                      key={`seg-${i}`}
+                      className={`absolute top-0 left-1/2 origin-bottom text-sm sm:text-lg md:text-xl ${isLight ? 'drop-shadow-[1px_1px_0_rgba(255,255,255,0.7)]' : 'drop-shadow-[2px_2px_0_rgba(0,0,0,1)]'} ${config.wheel.font}`}
+                      style={{
+                        width: '120px',
+                        height: '50%',
+                        marginLeft: '-60px',
+                        transform: `rotate(${i * (360 / segments.length) + (360 / segments.length) / 2}deg)`,
+                        color: isLight ? 'black' : 'white',
+                      }}
                     >
-                      <div className="h-[50%] shrink-0"></div>
-                      <div className={`h-[50%] flex ${config.wheel.textOrientation === 'vertical' ? 'flex-row' : 'flex-col'} items-center justify-center px-1 pb-2 sm:pb-4 md:pb-6`}>
-                        <div style={{ writingMode: config.wheel.textOrientation === 'vertical' ? 'vertical-rl' : 'horizontal-tb', textOrientation: 'mixed', fontSize: config.wheel.fontSize }}>
-                          <SmartText text={seg.title} fontId={config.wheel.font} className="text-center font-bold" />
-                        </div>
-                        {seg.description && (
-                          <div
-                            className="text-center px-1 opacity-90 leading-tight"
-                            style={{
-                              fontSize: Math.max(8, config.wheel.fontSize * 0.6),
-                              marginTop: config.wheel.textOrientation === 'vertical' ? 0 : '0.25rem',
-                              marginLeft: config.wheel.textOrientation === 'vertical' ? '0.25rem' : 0,
-                              writingMode: config.wheel.textOrientation === 'vertical' ? 'vertical-rl' : 'horizontal-tb',
-                              textOrientation: 'mixed',
-                            }}
-                          >
-                            <SmartText text={seg.description} fontId={config.wheel.font} className="font-bold" />
+                      <div
+                        className="absolute inset-0 flex flex-col"
+                        style={{ transform: 'rotate(180deg)', transformOrigin: 'center' }}
+                      >
+                        <div className="h-[50%] shrink-0"></div>
+                        <div className={`h-[50%] flex ${config.wheel.textOrientation === 'vertical' ? 'flex-row' : 'flex-col'} items-center justify-center px-1 pb-2 sm:pb-4 md:pb-6`}>
+                          <div style={{ writingMode: config.wheel.textOrientation === 'vertical' ? 'vertical-rl' : 'horizontal-tb', textOrientation: 'mixed', fontSize: config.wheel.fontSize }}>
+                            <SmartText text={seg.title} fontId={config.wheel.font} className="text-center font-bold" />
                           </div>
-                        )}
+                          {seg.description && (
+                            <div
+                              className="text-center px-1 opacity-90 leading-tight"
+                              style={{
+                                fontSize: Math.max(8, config.wheel.fontSize * 0.6),
+                                marginTop: config.wheel.textOrientation === 'vertical' ? 0 : '0.25rem',
+                                marginLeft: config.wheel.textOrientation === 'vertical' ? '0.25rem' : 0,
+                                writingMode: config.wheel.textOrientation === 'vertical' ? 'vertical-rl' : 'horizontal-tb',
+                                textOrientation: 'mixed',
+                              }}
+                            >
+                              <SmartText text={seg.description} fontId={config.wheel.font} className="font-bold" />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
                   );
                 })}
               </div>
@@ -1271,7 +1271,7 @@ export default function App() {
                             onChange={(e) => updateSegment(i, 'description', e.target.value)}
                             className="bg-white border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition-shadow outline-none"
                             placeholder="Short description"
-                            maxLength={20}
+                            maxLength={48}
                           />
                         </div>
                       </div>
