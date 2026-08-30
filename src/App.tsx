@@ -1261,7 +1261,7 @@ export default function App() {
                             onChange={(e) => updateSegment(i, 'title', e.target.value)}
                             className="bg-white border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition-shadow outline-none"
                             placeholder="Title or Icon"
-                            maxLength={8}
+                            maxLength={20}
                           />
                         </div>
                         <div className="flex flex-col gap-1.5 md:col-span-8">
