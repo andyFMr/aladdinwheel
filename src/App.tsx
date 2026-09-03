@@ -808,7 +808,7 @@ export default function App() {
 
     if (config.winner.type === 'text') {
       return (
-        <div className={`relative animate-bounce select-none text-center flex flex-col items-center min-w-[280px] max-w-[90vw] px-8 py-4 z-10 ${config.winner.font}`}>
+        <div className={`relative animate-bounce select-none text-center flex flex-col items-center min-w-[280px] max-w-[90vw] px-8 py-4 z-10 ${config.winner.font}`} >
           <SmartText text={config.winner.textTop} fontId={config.winner.font} className="mb-2 font-black tracking-widest opacity-80 uppercase" style={{ textShadow: '1px 1px 0 rgba(0,0,0,0.5)', fontSize: Math.max(10, config.winner.fontSize / 3) }} color={config.winner.colorTop} />
           <SmartText text={result.title} fontId={config.winner.font} className="font-bold" style={{ fontSize: config.winner.fontSize, textShadow: '2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000, 4px 4px 0px rgba(0,0,0,0.3)' }} color={result.color || '#ff4db8'} />
           {result.description && (
@@ -1100,7 +1100,7 @@ export default function App() {
 
       {/* Result Display Banner - Floating Overlay in front */}
       <div className="absolute bottom-6 sm:bottom-10 left-0 right-0 flex items-center justify-center z-50 px-4 pointer-events-none">
-        <div className="pointer-events-auto">
+        <div className="pointer-events-auto" style={{ marginBottom: '-80px' }}>
           {renderWinnerBanner()}
         </div>
       </div>
