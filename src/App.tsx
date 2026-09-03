@@ -340,7 +340,7 @@ export default function App() {
     async function loadAssets() {
       try {
         const { getAssetFromDB } = await import('./assets');
-        const ids = ['genieIdle', 'genieSpin', 'genieResult', 'btnImg', 'bannerImg', 'bgmDefault', 'tickDefault', 'winnerDefault'];
+        const ids = ['genieIdle', 'genieSpin', 'genieResult', 'btnImg', 'bannerImg', 'bgmDefault', 'tickDefault', 'winnerDefault', 'bgAsset', 'titleImg'];
         const loaded: Record<string, string> = {};
         for (const id of ids) {
           const b64 = await getAssetFromDB(id);
@@ -823,7 +823,7 @@ export default function App() {
       const src = getImgSrc(config.winner.bannerImg);
       return (
         <div
-          className={`relative animate-bounce select-none text-center flex flex-col items-center min-w-[280px] max-w-[90vw] px-12 py-8 overflow-hidden rounded-xl ${config.winner.font}`}
+          className={`relative animate-bounce select-none text-center flex flex-col items-center min-w-[280px] max-w-[90vw] px-38 py-28 overflow-hidden rounded-xl ${config.winner.font}`}
         >
           {src && <img src={src} className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none" style={{ ...getImgStyle(config.winner.bannerImg, 'cover') }} alt="Winner Banner" />}
           <div className="z-10 flex flex-col items-center relative">
@@ -2293,9 +2293,9 @@ export default function App() {
       )}
 
       {/* Audio Elements */}
-      <audio ref={bgmRef} loop src={config.audio.bgmAsset ? (assetUrls[config.audio.bgmAsset.id] || config.audio.bgmAsset.source) : ''} />
-      <audio ref={tickRef} src={config.audio.tickAsset ? (assetUrls[config.audio.tickAsset.id] || config.audio.tickAsset.source) : ''} />
-      <audio ref={winnerRef} src={config.audio.winnerAsset ? (assetUrls[config.audio.winnerAsset.id] || config.audio.winnerAsset.source) : ''} />
+      <audio ref={bgmRef} loop src={config.audio.bgmAsset ? (assetUrls[config.audio.bgmAsset.id] || config.audio.bgmAsset.source || './break_time.mp3') : './break_time.mp3'} />
+      <audio ref={tickRef} src={config.audio.tickAsset ? (assetUrls[config.audio.tickAsset.id] || config.audio.tickAsset.source || './cursor.wav') : './cursor.wav'} />
+      <audio ref={winnerRef} src={config.audio.winnerAsset ? (assetUrls[config.audio.winnerAsset.id] || config.audio.winnerAsset.source || './winner.mp3') : './winner.mp3'} />
 
     </div>
   );
