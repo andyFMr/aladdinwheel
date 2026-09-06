@@ -155,6 +155,10 @@ export type AppConfig = {
     bannerImg?: CustomImageAsset;
     font: string;
     fontSize: number;
+    bounceEnabled: boolean;
+    bounceHeight: number;
+    offsetX: number;
+    offsetY: number;
   };
   genie: {
     idle: CustomImageAsset;
@@ -226,6 +230,10 @@ const INITIAL_CONFIG: AppConfig = {
     bannerImg: { id: 'bannerImg', source: './pergaminho.png', scale: 97, offsetX: 0, offsetY: 0, pixelated: true },
     font: 'font-pixel',
     fontSize: 12,
+    bounceEnabled: true,
+    bounceHeight: 25,
+    offsetX: 0,
+    offsetY: 0,
   },
   genie: {
     idle: { id: 'genieIdle', source: './genie1.gif', scale: 94, offsetX: 8, offsetY: 15, pixelated: true },
@@ -688,7 +696,11 @@ export default function App() {
 
         if (genie2Ref.current) {
           const baseSrc = getImgSrc(config.genie.spin);
-          if (!baseSrc.startsWith('data:')) {
+          if (baseSrc.startsWith('data:')) {
+            // Trick para data URI (Base64): O navegador recusa "?query", mas frequentemente aceita "#hash"
+            // Isso engana o navegador fazendo-o pensar que a imagem mudou, forçando o GIF a reiniciar imediatamente sem "piscar"
+            genie2Ref.current.src = `${baseSrc}#t=${Date.now()}`;
+          } else {
             genie2Ref.current.src = `${baseSrc}?t=${Date.now()}`;
           }
         }
@@ -806,15 +818,42 @@ export default function App() {
   const renderWinnerBanner = () => {
     if (!result || genieState !== 'result') return null;
 
+    const bannerBounceStyle = {
+      animation: config.winner.bounceEnabled ? `custom-bounce-${config.winner.bounceHeight} 1s infinite` : 'none'
+    };
+
+    const CustomBounceStyles = () => (
+      <style>{`
+        @keyframes custom-bounce-${config.winner.bounceHeight} {
+          0%, 100% {
+            transform: translateY(-${config.winner.bounceHeight}%);
+            animation-timing-function: cubic-bezier(0.8,0,1,1);
+          }
+          50% {
+            transform: none;
+            animation-timing-function: cubic-bezier(0,0,0.2,1);
+          }
+        }
+      `}</style>
+    );
+
+    const positionStyle = {
+      transform: `translate(${config.winner.offsetX}px, ${config.winner.offsetY}px)`,
+      zIndex: 10
+    };
+
     if (config.winner.type === 'text') {
       return (
-        <div className={`relative animate-bounce select-none text-center flex flex-col items-center min-w-[280px] max-w-[90vw] px-8 py-4 z-10 ${config.winner.font}`} >
-          <SmartText text={config.winner.textTop} fontId={config.winner.font} className="mb-2 font-black tracking-widest opacity-80 uppercase" style={{ textShadow: '1px 1px 0 rgba(0,0,0,0.5)', fontSize: Math.max(10, config.winner.fontSize / 3) }} color={config.winner.colorTop} />
-          <SmartText text={result.title} fontId={config.winner.font} className="font-bold" style={{ fontSize: config.winner.fontSize, textShadow: '2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000, 4px 4px 0px rgba(0,0,0,0.3)' }} color={result.color || '#ff4db8'} />
-          {result.description && (
-            <SmartText text={result.description} fontId={config.winner.font} className="mt-3 text-white font-bold tracking-[0.2em] uppercase drop-shadow-md" style={{ fontSize: Math.max(12, config.winner.fontSize / 2.5) }} />
-          )}
-          {renderWinnerBadge()}
+        <div style={positionStyle}>
+          <CustomBounceStyles />
+          <div className={`relative select-none text-center flex flex-col items-center min-w-[280px] max-w-[90vw] px-8 py-4 z-10 ${config.winner.font}`} style={bannerBounceStyle}>
+            <SmartText text={config.winner.textTop} fontId={config.winner.font} className="mb-2 font-black tracking-widest opacity-80 uppercase" style={{ textShadow: '1px 1px 0 rgba(0,0,0,0.5)', fontSize: Math.max(10, config.winner.fontSize / 3) }} color={config.winner.colorTop} />
+            <SmartText text={result.title} fontId={config.winner.font} className="font-bold" style={{ fontSize: config.winner.fontSize, textShadow: '2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000, 4px 4px 0px rgba(0,0,0,0.3)' }} color={result.color || '#ff4db8'} />
+            {result.description && (
+              <SmartText text={result.description} fontId={config.winner.font} className="mt-3 text-white font-bold tracking-[0.2em] uppercase drop-shadow-md" style={{ fontSize: Math.max(12, config.winner.fontSize / 2.5) }} />
+            )}
+            {renderWinnerBadge()}
+        </div>
         </div>
       );
     }
@@ -822,17 +861,21 @@ export default function App() {
     if (config.winner.type === 'image' && config.winner.bannerImg) {
       const src = getImgSrc(config.winner.bannerImg);
       return (
-        <div
-          className={`relative animate-bounce select-none text-center flex flex-col items-center min-w-[280px] max-w-[90vw] px-38 py-28 overflow-hidden rounded-xl ${config.winner.font}`}
-        >
-          {src && <img src={src} className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none" style={{ ...getImgStyle(config.winner.bannerImg, 'cover') }} alt="Winner Banner" />}
-          <div className="z-10 flex flex-col items-center relative">
-            <SmartText text={config.winner.textTop} fontId={config.winner.font} className="mb-2 font-black tracking-widest opacity-80 uppercase" color={config.winner.colorTop} style={{ fontSize: Math.max(10, config.winner.fontSize / 3) }} />
-            <SmartText text={result.title} fontId={config.winner.font} className="font-bold" style={{ fontSize: config.winner.fontSize, textShadow: '2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000, 4px 4px 0px rgba(0,0,0,0.3)' }} color={result.color || '#ff4db8'} />
-            {result.description && (
-              <SmartText text={result.description} fontId={config.winner.font} className="mt-3 font-bold tracking-[0.2em] uppercase" color={config.winner.colorTop} style={{ fontSize: Math.max(12, config.winner.fontSize / 2.5) }} />
-            )}
-            {renderWinnerBadge()}
+        <div style={positionStyle}>
+          <CustomBounceStyles />
+          <div
+            className={`relative select-none text-center flex flex-col items-center min-w-[280px] max-w-[90vw] px-38 py-28 overflow-hidden rounded-xl ${config.winner.font}`}
+            style={bannerBounceStyle}
+          >
+            {src && <img src={src} className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none" style={{ ...getImgStyle(config.winner.bannerImg, 'cover') }} alt="Winner Banner" />}
+            <div className="z-10 flex flex-col items-center relative">
+              <SmartText text={config.winner.textTop} fontId={config.winner.font} className="mb-2 font-black tracking-widest opacity-80 uppercase" color={config.winner.colorTop} style={{ fontSize: Math.max(10, config.winner.fontSize / 3) }} />
+              <SmartText text={result.title} fontId={config.winner.font} className="font-bold" style={{ fontSize: config.winner.fontSize, textShadow: '2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000, 4px 4px 0px rgba(0,0,0,0.3)' }} color={result.color || '#ff4db8'} />
+              {result.description && (
+                <SmartText text={result.description} fontId={config.winner.font} className="mt-3 font-bold tracking-[0.2em] uppercase" color={config.winner.colorTop} style={{ fontSize: Math.max(12, config.winner.fontSize / 2.5) }} />
+              )}
+              {renderWinnerBadge()}
+            </div>
           </div>
         </div>
       );
@@ -840,14 +883,16 @@ export default function App() {
 
     // Default: 'solid' (the scroll)
     return (
-      <div className="relative animate-bounce select-none text-center flex flex-col items-center min-w-[280px] max-w-[90vw] px-8 py-4">
-        {/* Background Scroll Core */}
-        <div className="absolute inset-0 border-y-[4px] border-[#593112] -z-10 shadow-[0_8px_0_rgba(0,0,0,0.25)]" style={{ backgroundColor: config.winner.bgColor }}>
-          <div className="absolute top-[2px] left-1 right-1 border-t-[2px] border-dashed border-[#c18c5e]"></div>
-          <div className="absolute bottom-[2px] left-1 right-1 border-b-[2px] border-dashed border-[#c18c5e]"></div>
-        </div>
+      <div style={positionStyle}>
+        <CustomBounceStyles />
+        <div className="relative select-none text-center flex flex-col items-center min-w-[280px] max-w-[90vw] px-8 py-4" style={bannerBounceStyle}>
+          {/* Background Scroll Core */}
+          <div className="absolute inset-0 border-y-[4px] border-[#593112] -z-10 shadow-[0_8px_0_rgba(0,0,0,0.25)]" style={{ backgroundColor: config.winner.bgColor }}>
+            <div className="absolute top-[2px] left-1 right-1 border-t-[2px] border-dashed border-[#c18c5e]"></div>
+            <div className="absolute bottom-[2px] left-1 right-1 border-b-[2px] border-dashed border-[#c18c5e]"></div>
+          </div>
 
-        {/* Scroll Left Roll */}
+          {/* Scroll Left Roll */}
         <div className="absolute top-[-6px] bottom-[-6px] left-[-20px] w-[24px] border-[4px] border-[#593112] rounded-l-xl -z-10 shadow-[-6px_8px_0_rgba(0,0,0,0.25)] overflow-hidden" style={{ backgroundColor: config.winner.bgColor, filter: 'brightness(0.85)' }}>
         </div>
 
@@ -864,6 +909,7 @@ export default function App() {
           )}
           {renderWinnerBadge()}
         </div>
+      </div>
       </div>
     );
   };
@@ -1075,7 +1121,7 @@ export default function App() {
               <div className="absolute top-[-5%] left-[-5%] right-[-5%] bottom-[-5%] flex items-center justify-center z-20 pointer-events-none">
                 <img src={getImgSrc(config.genie.idle)} alt="Genie Idle" className={`absolute aspect-square object-contain ${genieState !== 'idle' ? 'hidden' : ''}`} style={getImgStyle(config.genie.idle)} />
                 <img ref={genie2Ref} src={getImgSrc(config.genie.spin)} alt="Genie Spinning" className={`absolute aspect-square object-contain ${genieState !== 'spinning' ? 'hidden' : ''}`} style={getImgStyle(config.genie.spin)} />
-                <img src={getImgSrc(config.genie.result, `?t=${genie3Key}`)} alt="Genie Result" className={`absolute aspect-square object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] ${genieState !== 'result' ? 'hidden' : ''}`} style={getImgStyle(config.genie.result)} />
+                <img key={genie3Key} src={getImgSrc(config.genie.result, `?t=${genie3Key}`)} alt="Genie Result" className={`absolute aspect-square object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] ${genieState !== 'result' ? 'hidden' : ''}`} style={getImgStyle(config.genie.result)} />
               </div>
             </>
           )}
@@ -1653,6 +1699,45 @@ export default function App() {
                             <input type="color" value={config.winner.bgColor} onChange={(e) => updateConfig('winner', 'bgColor', e.target.value)} className="absolute inset-[-10px] w-16 h-16 cursor-pointer" />
                           </div>
                         )}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 mt-2">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Animation</label>
+                      <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={config.winner.bounceEnabled} 
+                            onChange={(e) => updateConfig('winner', 'bounceEnabled', e.target.checked)}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          Bounce
+                        </label>
+                        <div className="flex flex-col flex-1 gap-1">
+                          <div className="flex justify-between">
+                            <span className="text-[10px] font-semibold text-gray-500 uppercase">Size ({config.winner.bounceHeight}%)</span>
+                          </div>
+                          <input 
+                            type="range" 
+                            min="5" max="100" 
+                            value={config.winner.bounceHeight} 
+                            onChange={(e) => updateConfig('winner', 'bounceHeight', Number(e.target.value))} 
+                            disabled={!config.winner.bounceEnabled}
+                            className={`w-full h-2 bg-gray-200 rounded-lg appearance-none ${config.winner.bounceEnabled ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`} 
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-4 mt-2">
+                      <div className="flex-1 flex flex-col gap-1.5">
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Pos X ({config.winner.offsetX}px)</label>
+                        <input type="range" min="-300" max="300" value={config.winner.offsetX} onChange={(e) => updateConfig('winner', 'offsetX', Number(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
+                      </div>
+                      <div className="flex-1 flex flex-col gap-1.5">
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Pos Y ({config.winner.offsetY}px)</label>
+                        <input type="range" min="-300" max="300" value={config.winner.offsetY} onChange={(e) => updateConfig('winner', 'offsetY', Number(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
                       </div>
                     </div>
 
